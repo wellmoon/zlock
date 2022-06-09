@@ -22,7 +22,7 @@ func (zm *ZLockMap) Lock(key interface{}) {
 	}
 }
 
-func (zm *ZLockMap) UnLock(key interface{}) {
+func (zm *ZLockMap) Unlock(key interface{}) {
 	val, ok := zm.SyncMap.Load(key)
 	if ok {
 		l := val.(*sync.Mutex)
