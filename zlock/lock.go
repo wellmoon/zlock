@@ -1,13 +1,29 @@
 package zlock
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
 type ZLockMap struct {
-	SyncMap sync.Map
+	SyncMap *sync.Map
 }
 
-func New(m sync.Map) *ZLockMap {
-	return &ZLockMap{m}
+var opts int64 = 0
+var innerMap = make(map[int64]*sync.Map, 0)
+var lock sync.Mutex
+
+func New() *ZLockMap {
+	atomic.AddInt64(&opts, 1)
+	return &ZLockMap{newMap()}
+}
+
+func newMap() *sync.Map {
+	lock.Lock()
+	defer lock.Unlock()
+	var m sync.Map
+	innerMap[opts] = &m
+	return &m
 }
 
 func (zm *ZLockMap) Lock(key interface{}) {
@@ -27,5 +43,6 @@ func (zm *ZLockMap) Unlock(key interface{}) {
 	if ok {
 		l := val.(*sync.Mutex)
 		l.Unlock()
+		zm.SyncMap.Delete(key)
 	}
 }
